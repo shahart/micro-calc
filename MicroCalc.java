@@ -33,16 +33,17 @@ public final class MicroCalc extends MIDlet {
     // TODO - add FullCanvas here?
     public static final short DEFAULT_PRECISION = MathFP._digits-3;	// different on sl45, a bug in J2ME long mul operation
     static final String ABOUT_MSG =
-	"When typing expression use '=' before formulas. " +
-	"Supported operators are: + - / * ^(power) &(string concatenation), logical operators: = != > < >= <=\n" +
-    	"Functions: SIN,COS,TAN,COT,ASIN,ACOS,ATAN,ATAN2,EXP,LN,SQRT,ABS,POW,SUM,IF,AND,OR.\n" +
+	"Use '=' before formulas. " +
+	"Operators: + - / * ^(power) &(string concatenation), logical operators: = != > < >= <=\n" +
+    	"Functions: EXP, LN, SQRT, ABS, POWER, SUM, IF, AND, OR, RAND, MAX, MIN, PMT, SUMSQ, COUNT, AVERAGE, STDEV\n" +
     	"Data types: boolean, long, decimal (fixed point 40/24 bits), string, datetime.\n" +
-    	"Press <#><0> for NUMERIC mode, then <#> to finish it.\n<#><9> - on/off cell info mode.\n" +
-    	"For full instructions, news and latest updates visit us at www.wapindustrial.com (wap page http://www.wapindustrial.com/microcalc/microcalc.wml).\n" +
-    	"MicroCalc package includes 'Sync' utility to save sheets on network server to your personal folder.\n" +
-    	"Midlet is developed by WAP INDUSTRIAL [support@wapindustrial.com]."; 
-
-        MicroCalcCanvas canvas;
+    	"Press <#><0> for NUMERIC mode, then <#> to finish it.\n<#><9> - on/off cell info mode.\n<#><1> - copy cell<#><2> - paste.\n" +
+            "modified by me (Shahar) to make ex/import work plus additional functions.\n" +
+            "For full instructions, news and latest updates visit us at www.wapindustrial.com (wap page http://www.wapindustrial.com/microcalc/microcalc.wml).\n" +
+            "MicroCalc package includes 'Sync' utility to save sheets on network server to your personal folder.\n" +
+            "Midlet is developed by WAP INDUSTRIAL [support@wapindustrial.com]."; 
+    
+    MicroCalcCanvas canvas;
 
     public MicroCalc() {
     }

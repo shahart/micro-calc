@@ -39,6 +39,7 @@ public final class Result {
     public static final byte TYPE_RANGE	= 15;
     
     // operators
+//    public static final byte OPER_PERCENT= 19;
     public static final byte OPER_UMIN	= 20;
     public static final byte OPER_ADD	= 21;
     public static final byte OPER_SUB	= 22;
@@ -68,39 +69,41 @@ public final class Result {
     private static final byte FUNC_EXP	= 5;
     private static final byte FUNC_LN	= 6;
     private static final byte FUNC_SQRT	= 7;
-    private static final byte FUNC_SIN	= 8;
-    private static final byte FUNC_COS	= 9;
-    private static final byte FUNC_TAN	= 10;
-    private static final byte FUNC_COT	= 11;
-    private static final byte FUNC_ASIN	= 12;
-    private static final byte FUNC_ACOS	= 13;
-    private static final byte FUNC_ATAN	= 14;
-    private static final byte FUNC_ATAN2= 15;
-    private static final byte FUNC_ABS	= 16;
-    private static final byte FUNC_PI	= 17;
-    private static final byte FUNC_E	= 18;
-    
+    private static final byte FUNC_ABS	= 8;//16;
+    private static final byte FUNC_PI	= 9;//17;
+    private static final byte FUNC_E	= 10;//18;
+    private static final byte FUNC_RAND = 11;
+    private static final byte FUNC_PMT = 12;
+    private static final byte FUNC_MAX = 13;
+    private static final byte FUNC_MIN = 14;
+    private static final byte FUNC_SUMSQ = 15;
+    private static final byte FUNC_COUNT = 16;
+    private static final byte FUNC_AVERAGE = 17;
+    private static final byte FUNC_STDEV = 18;
+
     private static final String FUNCTION_NAMES[] = { 
         "SUM",
         "IF",
         "AND",
         "OR",
-        "POW",
+        "POWER",
         "EXP",
         "LN",
         "SQRT",
-        "SIN",
-        "COS",
-        "TAN",
-        "COT",
-        "ASIN",
-        "ACOS",
-        "ATAN",
-        "ATAN2",
         "ABS",
         "PI",
-        "E"
+        "E",
+            "RAND",
+            "PMT",
+            "MAX",
+            "MIN",
+           "SUMSQ",
+            "COUNT",
+            "AVERAGE",
+            "STDEV"
     };
+
+    private Random rand = new Random();
 
     // error messages
     private static final String MSG_INTERNAL_ERROR      = "Internal error";
@@ -393,6 +396,9 @@ public final class Result {
             case TYPE_RANGE:
                 ss = rangeAddress( i1,j1,i2,j2, absolute );
                 break;
+//            case OPER_PERCENT:
+//                ss = "("+s1 +"/100)";
+//                break;
             case OPER_UMIN:
                 ss = '-' + s1;
                 break;
@@ -554,6 +560,71 @@ public final class Result {
         return rr;
     }
     
+    private Result countRange( Sheet sheet ) throws BadFormulaException {
+        //	if( type != TYPE_RANGE )
+        //	    return this;
+        Result rr = new Result( TYPE_BCD );             // zero
+        Result val;
+        for( int i=i1; i<=i2; i++ )
+            for( int j=j1; j<=j2; j++ ) {
+                val = sheet.getCellValue( i,j );
+                if( val.type == TYPE_EMPTY || val.type == TYPE_STRING ) continue;
+                rr = operation( OPER_ADD, rr, createFloat(MathFP.ONE) );
+            }
+        return rr;
+    }
+
+    private Result sumSqRange( Sheet sheet ) throws BadFormulaException {
+        //	if( type != TYPE_RANGE )
+        //	    return this;
+        Result rr = new Result( TYPE_BCD );             // zero
+        Result val;
+        for( int i=i1; i<=i2; i++ )
+            for( int j=j1; j<=j2; j++ ) {
+                val = sheet.getCellValue( i,j );
+                if( val.type == TYPE_EMPTY || val.type == TYPE_STRING ) continue;
+                Result val2 = operation(OPER_MUL, val,val);
+                rr = operation( OPER_ADD, rr, val2 );
+            }
+        return rr;
+    }
+
+    private Result maxRange( Sheet sheet ) throws BadFormulaException {
+        //	if( type != TYPE_RANGE )
+        //	    return this;
+        Result rr = createFloat(MathFP.MIN_VALUE);//new Result( TYPE_BCD );             // zero
+        Result val;
+        for( int i=i1; i<=i2; i++ )
+            for( int j=j1; j<=j2; j++ ) {
+                val = sheet.getCellValue( i,j );
+                if( val.type == TYPE_EMPTY || val.type == TYPE_STRING ) continue;
+                Result rr2 = operation( OPER_GT, rr, val );
+                if (rr2.ll == 1)
+                    rr = rr;
+                else
+                    rr = val;
+            }
+        return rr;
+    }
+
+    private Result minRange( Sheet sheet ) throws BadFormulaException {
+        //	if( type != TYPE_RANGE )
+        //	    return this;
+        Result rr = createFloat(MathFP.MAX_VALUE);//new Result( TYPE_BCD );             // zero
+        Result val;
+        for( int i=i1; i<=i2; i++ )
+            for( int j=j1; j<=j2; j++ ) {
+                val = sheet.getCellValue( i,j );
+                if( val.type == TYPE_EMPTY || val.type == TYPE_STRING ) continue;
+                Result rr2 = operation( OPER_LT, rr, val );
+                if (rr2.ll == 1)
+                    rr = rr;
+                else
+                    rr = val;
+            }
+        return rr;
+    }
+
     private Result toMaxType( int t2 ) throws BadFormulaException {
         
         // TYPE_RANGE is illegal, call calculate() before this
@@ -778,7 +849,7 @@ public final class Result {
     }
     
     public boolean isOperator() {
-        return type >= OPER_UMIN && type <= OPER_GE;
+        return type >= OPER_UMIN /*PERCENT*/ && type <= OPER_GE;
     }
     public boolean isConstant() {
         return (type >= TYPE_EMPTY && type <= TYPE_STRING) || type == TYPE_ERROR;
@@ -806,12 +877,49 @@ public final class Result {
             }
             throw new BadFormulaException("unary minus with unsupported data type");
         }
+//        if( type == OPER_PERCENT ) {
+//            switch( a1.type ) {
+//                case TYPE_LONG:
+//                    return new Result( TYPE_LONG, a1.ll/100 );
+//                case TYPE_BCD:
+//                    return createFloat( a1.ll/100 );
+//            }
+//            throw new BadFormulaException("unary minus with unsupported data type");
+//        }
         if( isOperator() )
             return operation( type, a1, a2 );
         if( type == TYPE_FUNC ) {
           return calculateFunc( sheet );
         }
         throw new BadFormulaException( MSG_INTERNAL_ERROR );
+    }
+
+    private long pmt(long rate, long npr, long n) throws BadFormulaException{
+
+        // TODO real pmt is -PMT(4.1%/12,12*20,1000*130)
+        // =100000/((1-(1/(1+ (0.041/12)) ^ 240) )/(0.041/12))
+
+        Result newNpr =  createFloat(npr);
+
+        Result ans =
+        operation(OPER_DIV,
+                createFloat(n),
+            operation(OPER_DIV,
+                operation(OPER_SUB,
+                        createFloat(MathFP.ONE),
+                    operation(OPER_DIV,
+                        createFloat(MathFP.ONE),
+                        operation(OPER_POW,
+                            operation(OPER_ADD,
+                                    createFloat(rate),
+                                    createFloat(MathFP.ONE)),
+                            operation(OPER_MUL,
+                                    createFloat(MathFP.toFP(1)),
+                                    createFloat(npr))))),
+                    createFloat(rate)));
+
+        return ans.ll;
+
     }
     
     private Result calculateFunc( Sheet sheet ) throws BadFormulaException {
@@ -824,7 +932,79 @@ public final class Result {
           case FUNC_PI:    
               return createFloat( MathFP.PI );
 
-          case FUNC_SUM:    
+          case FUNC_COUNT:
+              Result y7 = new Result(TYPE_EMPTY);
+              for( int i=0; i<funcargs.length; i++ ) {
+                  Result x = funcargs[i];
+                  if( x.type == TYPE_RANGE ) {
+                      x = x.countRange( sheet );
+                      y7 = operation( OPER_ADD, y7, x);
+                  }
+                  else {
+                      x = x.calculate(sheet);
+                      y7 = operation( OPER_ADD, y7, createFloat(MathFP.ONE) );
+                  }
+              }
+              return y7;
+          case FUNC_AVERAGE:
+              //sum
+              Result y9 = new Result(TYPE_EMPTY);
+              for( int i=0; i<funcargs.length; i++ ) {
+                  Result x = funcargs[i];
+                  if( x.type == TYPE_RANGE ) x = x.sumRange( sheet );
+                  else x = x.calculate(sheet);
+                  y9 = operation( OPER_ADD, y9, x );
+              }
+            //count
+              Result y8 = new Result(TYPE_EMPTY);
+              for( int i=0; i<funcargs.length; i++ ) {
+                  Result x = funcargs[i];
+                  if( x.type == TYPE_RANGE ) {
+                      x = x.countRange( sheet );
+                      y8 = operation( OPER_ADD, y8, x); 
+                  }
+                  else {
+                      x = x.calculate(sheet);
+                      y8 = operation( OPER_ADD, y8, createFloat(MathFP.ONE) );
+                  }
+              }
+              return operation(OPER_DIV, y9,y8);
+          case FUNC_STDEV:
+              // sumsq
+              Result y14 = new Result(TYPE_EMPTY);
+              for( int i=0; i<funcargs.length; i++ ) {
+                  Result x = funcargs[i];
+                  if( x.type == TYPE_RANGE ) x = x.sumSqRange( sheet );
+                  else {
+                      x = x.calculate(sheet);
+                      x = operation(OPER_MUL, x,x);
+                  }
+                  y14 = operation( OPER_ADD, y14, x );
+              }
+              //sum
+              Result y12 = new Result(TYPE_EMPTY);
+              for( int i=0; i<funcargs.length; i++ ) {
+                  Result x = funcargs[i];
+                  if( x.type == TYPE_RANGE ) x = x.sumRange( sheet );
+                  else x = x.calculate(sheet);
+                  y12 = operation( OPER_ADD, y12, x );
+              }
+            //count
+              Result y13 = new Result(TYPE_EMPTY);
+              for( int i=0; i<funcargs.length; i++ ) {
+                  Result x = funcargs[i];
+                  if( x.type == TYPE_RANGE ) {
+                      x = x.countRange( sheet );
+                      y13 = operation( OPER_ADD, y13, x);
+                  }
+                  else {
+                      x = x.calculate(sheet);
+                      y13 = operation( OPER_ADD, y13, createFloat(MathFP.ONE) );
+                  }
+              }
+              // Math.sqrt((basel.sumSqr - (basel.sum * basel.sum) / (basel.n)) / (basel.n - 1));
+              return createFloat(MathFP.sqrt(operation(OPER_DIV,operation(OPER_SUB, y14,operation(OPER_DIV, operation(OPER_MUL, y12,y12), y13)),operation(OPER_SUB, y13, createFloat(MathFP.ONE))).ll));
+          case FUNC_SUM:
             Result y = new Result(TYPE_EMPTY);
             for( int i=0; i<funcargs.length; i++ ) {
                 Result x = funcargs[i];
@@ -833,6 +1013,38 @@ public final class Result {
                 y = operation( OPER_ADD, y, x );
             }
             return y;
+          case FUNC_SUMSQ:
+            Result y4 = new Result(TYPE_EMPTY);
+            for( int i=0; i<funcargs.length; i++ ) {
+                Result x = funcargs[i];
+                if( x.type == TYPE_RANGE ) x = x.sumSqRange( sheet );
+                else {
+                    x = x.calculate(sheet);
+                    x = operation(OPER_MUL, x,x);
+                }
+                y4 = operation( OPER_ADD, y4, x );
+            }
+            return y4;
+          case FUNC_MAX:
+            Result y2 = createFloat(MathFP.MIN_VALUE); // new Result(TYPE_EMPTY);
+            for( int i=0; i<funcargs.length; i++ ) {
+                Result x = funcargs[i];
+                if( x.type == TYPE_RANGE ) x = x.maxRange( sheet );
+                else x = x.calculate(sheet);
+                if (operation( OPER_GT, y2, x ).ll == 0)
+                    y2 = x;
+            }
+            return y2;
+          case FUNC_MIN:
+            Result y3 = createFloat(MathFP.MAX_VALUE); // new Result(TYPE_EMPTY);
+            for( int i=0; i<funcargs.length; i++ ) {
+                Result x = funcargs[i];
+                if( x.type == TYPE_RANGE ) x = x.minRange( sheet );
+                else x = x.calculate(sheet);
+                if (operation( OPER_LT, y3, x ).ll == 0)
+                    y3 = x;
+            }
+            return y3;
           case FUNC_IF:
             if( funcargs.length != 3 )
                 throw new BadFormulaException(MSG_WRONG_ARG_NUMBER);
@@ -841,29 +1053,34 @@ public final class Result {
             Result a3 = funcargs[2].calculate(sheet);
             if( a1.type != TYPE_BOOLEAN )
                 throw new BadFormulaException(MSG_WRONG_ARG_TYPE);
-            return a1.ll!=0L ? a2 : a3;
+            return (a1.ll!=0L ? a2 : a3);
+          case FUNC_PMT:
+              if( funcargs.length != 3 )
+                  throw new BadFormulaException(MSG_WRONG_ARG_NUMBER);
+              a1 = funcargs[0].calculate(sheet).toMaxType( TYPE_BCD );
+              a2 = funcargs[1].calculate(sheet).toMaxType( TYPE_BCD );
+              a3 = funcargs[2].calculate(sheet).toMaxType( TYPE_BCD );
+            return createFloat(pmt(a1.ll, a2.ll, a3.ll));
 
+//              case FUNC_PMT:
           case FUNC_POW:
-          case FUNC_ATAN2:
+//          case FUNC_ATAN2:
             if( funcargs.length != 2 )
                 throw new BadFormulaException(MSG_WRONG_ARG_NUMBER);
             a1 = funcargs[0].calculate(sheet).toMaxType( TYPE_BCD );
             a2 = funcargs[1].calculate(sheet).toMaxType( TYPE_BCD );
-            long bcd = functype == FUNC_POW ? MathFP.pow( a1.ll, a2.ll ) : MathFP.atan2( a1.ll, a2.ll );
+            long bcd = //functype == FUNC_POW ?
+                    MathFP.pow( a1.ll, a2.ll )
+                    ; //: pmt(a1.ll, a2.ll);
+                  //  : MathFP.atan2( a1.ll, a2.ll );
             return createFloat( bcd );
 
           // arifm with 1 arg
-          case FUNC_SIN:
-          case FUNC_COS:
-          case FUNC_TAN:
-          case FUNC_COT:
           case FUNC_EXP:
           case FUNC_LN:
           case FUNC_SQRT:
           case FUNC_ABS:
-          case FUNC_ASIN:
-          case FUNC_ACOS:
-          case FUNC_ATAN:
+          case FUNC_RAND:
             if( funcargs.length != 1 )
                 throw new BadFormulaException(MSG_WRONG_ARG_NUMBER);
             a1 = funcargs[0].calculate(sheet).toMaxType( TYPE_BCD );
@@ -871,14 +1088,8 @@ public final class Result {
                 throw new BadFormulaException(MSG_WRONG_ARG_TYPE);
             long lll = a1.ll;
             switch( functype ) {
-              case FUNC_SIN:
-                  return createFloat( MathFP.sin( lll ) );
-              case FUNC_COS:
-                  return createFloat( MathFP.cos( lll ) );
-              case FUNC_TAN:
-                  return createFloat( MathFP.tan( lll ) );
-              case FUNC_COT:
-                  return createFloat( MathFP.cot( lll ) );
+              case FUNC_RAND:
+                return new Result(TYPE_BCD, rand.nextInt((int)lll));
               case FUNC_EXP:
                   return new Result( TYPE_BCD, MathFP.exp( lll ) );
               case FUNC_LN:
@@ -887,12 +1098,6 @@ public final class Result {
                   return createFloat( MathFP.sqrt( lll ) );
               case FUNC_ABS:
                   return new Result( TYPE_BCD, lll<0L?-lll:lll );
-              case FUNC_ASIN:
-                  return createFloat( MathFP.asin( lll ) );
-              case FUNC_ACOS:
-                  return createFloat( MathFP.acos( lll ) );
-              case FUNC_ATAN:
-                  return createFloat( MathFP.atan( lll ) );
             } 
             break;
  
