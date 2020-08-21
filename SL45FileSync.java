@@ -17,16 +17,19 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
-package com.wapindustrial.calc.sl45i;
+package com.wapindustrial.calc;
 
+import javax.microedition.io.file.FileConnection;
 import javax.microedition.lcdui.*;
 import javax.microedition.midlet.*;
 import javax.microedition.rms.*;
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.Enumeration;
+import javax.microedition.io.Connector;
 
-import com.siemens.mp.io.*;
-
+import com.sun.midp.io.j2me.storage.File;
 import com.wapindustrial.calc.*;
 
 public final class SL45FileSync extends MIDlet implements CommandListener {
@@ -98,14 +101,18 @@ public final class SL45FileSync extends MIDlet implements CommandListener {
     }
 
     private static void sheetToSYLK( Sheet sheet ) throws IOException {
-	File ff = new File();
-	int fd = ff.open( sheet.name + ".slk" );
 
+        // TODO?getAppProperty("your-file-location");
+        FileConnection localFileConnection1 = (FileConnection)Connector.open("file://localhost/Others/" + sheet.name + ".slk.txt");
+        if (localFileConnection1.exists())
+          localFileConnection1.delete();
+        localFileConnection1.create();
+        Object localObject1 = localFileConnection1.openDataOutputStream();
         String sss = sheet.toSylk();
-        
-	ff.write( fd, sss.getBytes(), 0, sss.length() );
-
-	ff.close( fd );
+        byte[] arrayOfByte = sss.getBytes(/*"UTF8"*/);
+        ((DataOutputStream)localObject1).write(arrayOfByte,0,arrayOfByte.length);
+        ((DataOutputStream)localObject1).close();
+        localFileConnection1.close();
     }
 
     /** Show a wait message. Don't forget to set the current displayable back. */
