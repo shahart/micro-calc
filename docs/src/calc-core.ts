@@ -186,14 +186,15 @@ class Parser {
       throw new FormulaError('Unclosed string');
     }
     const rest = this.source.slice(this.position);
-    const numberMatch = rest.match(/^(?:(?:\d+(?:\.\d*)?)|(?:\.\d+))(?:[Ll])?/);
+    const numberMatch = rest.match(/^(?:(?:\d+(?:\.\d*)?)|(?:\.\d+))(?:[Ll])?%?/);
     if (numberMatch) {
       this.position += numberMatch[0].length;
       const raw = numberMatch[0];
       const isLong = /[Ll]$/.test(raw);
-      const value = Number(isLong ? raw.slice(0, -1) : raw);
+      const isPercent = raw.endsWith('%');
+      const value = Number(raw.replace(/[Ll%]/g, ''));
       if (!Number.isFinite(value)) throw new FormulaError('Bad number');
-      return { kind: 'literal', value: num(value, isLong ? 'long' : 'number') };
+      return { kind: 'literal', value: num(isPercent ? value / 100 : value, isLong && !isPercent ? 'long' : 'number') };
     }
     const tokenMatch = rest.match(/^(?:\$?[A-Z]{1,3}\$?\d+(?::\$?[A-Z]{1,3}\$?\d+)?|[A-Z_][A-Z0-9_]*)/i);
     if (!tokenMatch) throw new FormulaError('Bad formula: expected a value');

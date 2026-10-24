@@ -20,6 +20,22 @@ test('parser respects arithmetic precedence and right-associative powers', () =>
   assert.equal(numeric(calculator.valueOfCell(0, 2)), -20);
 });
 
+test('percentage suffix converts entered and formula numbers to fractions', () => {
+  const calculator = calc({
+    '0,0': '50%',
+    '0,1': '12.5%',
+    '0,2': '=-25%',
+    '0,3': '=200*50%',
+    '0,4': '=50%+1%'
+  });
+  assert.equal(numeric(calculator.valueOfCell(0, 0)), 0.5);
+  assert.equal(numeric(calculator.valueOfCell(0, 1)), 0.125);
+  assert.equal(numeric(calculator.valueOfCell(0, 2)), -0.25);
+  assert.equal(numeric(calculator.valueOfCell(0, 3)), 100);
+  assert.equal(numeric(calculator.valueOfCell(0, 4)), 0.51);
+  assert.equal(numeric(parseRawConstant('75%')), 0.75);
+});
+
 test('references, ranges, and absolute references evaluate against sheet cells', () => {
   const calculator = calc({
     '0,0': '3', '1,0': '5', '2,0': '7',
