@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f4f6f8" />
+    <title>MicroCalc — Spreadsheet</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#" aria-label="MicroCalc home">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+          <span><strong>MicroCalc</strong><small>classic spreadsheet</small></span>
+        </a>
+        <div class="document-title">
+          <span class="eyebrow">WORKBOOK</span>
+          <strong id="sheet-title">untitled</strong>
+          <span id="save-state" class="save-state"><span></span> Saved locally</span>
+        </div>
+        <div class="top-actions">
+          <button class="icon-button" id="help-button" title="Help" aria-label="Help">?</button>
+        </div>
+      </header>
+
+      <section class="toolbar" aria-label="Workbook tools">
+        <div class="tool-group file-tools">
+          <button id="new-sheet" class="tool-button"><span class="tool-icon">＋</span>New</button>
+          <button id="save-sheet" class="tool-button"><span class="tool-icon">▣</span>Save</button>
+          <label class="select-wrap compact-select" aria-label="Saved sheets">
+            <select id="saved-sheets" title="Load saved sheet"><option value="">Open sheet…</option></select>
+            <span aria-hidden="true">⌄</span>
+          </label>
+          <button id="delete-sheet" class="tool-button subtle"><span class="tool-icon">⌫</span>Delete</button>
+          <span class="toolbar-divider"></span>
+          <button id="export-sylk" class="tool-button"><span class="tool-icon">⇩</span>Export SYLK</button>
+          <button id="export-json" class="tool-button subtle">Backup JSON</button>
+          <button id="import-json" class="tool-button subtle">Import</button>
+          <input id="json-file" type="file" accept="application/json,.json" hidden />
+        </div>
+        <div class="tool-group edit-tools">
+          <button id="copy-cell" class="tool-button subtle" title="Copy cell (Ctrl+C)"><span class="tool-icon">▢</span>Copy</button>
+          <button id="paste-cell" class="tool-button subtle" title="Paste cell (Ctrl+V)"><span class="tool-icon">▣</span>Paste</button>
+          <button id="clear-cell" class="tool-button subtle" title="Clear selected cell"><span class="tool-icon">×</span>Clear</button>
+        </div>
+      </section>
+
+      <section class="formatbar" aria-label="Cell format and sheet controls">
+        <div class="format-group">
+          <span class="format-label">Format</span>
+          <label class="select-wrap format-select">
+            <select id="cell-format" aria-label="Cell format">
+              <option value="general">General</option>
+              <option value="number">Number</option>
+              <option value="date">Date &amp; time</option>
+            </select><span aria-hidden="true">⌄</span>
+          </label>
+          <label class="digits-control" id="digits-control" hidden>Decimals <input id="decimal-digits" type="number" min="0" max="8" value="2" /></label>
+          <label class="check-control" id="separator-control" hidden><input id="thousands-separator" type="checkbox" /> Thousands separator</label>
+          <label class="check-control" id="date-control" hidden><input id="show-date" type="checkbox" checked /> Date</label>
+          <label class="check-control" id="time-control" hidden><input id="show-time" type="checkbox" /> Time</label>
+          <label class="date-extra" id="date-order-control" hidden>Order <span class="select-wrap"><select id="date-order"><option value="day-first">DD/MM</option><option value="month-first">MM/DD</option></select><span aria-hidden="true">⌄</span></span></label>
+          <label class="date-extra" id="date-year-control" hidden>Year <span class="select-wrap"><select id="date-year"><option value="2">YY</option><option value="4">YYYY</option></select><span aria-hidden="true">⌄</span></span></label>
+          <label class="date-extra" id="date-separator-control" hidden>Separator <span class="select-wrap"><select id="date-separator"><option value="/">/</option><option value=".">.</option></select><span aria-hidden="true">⌄</span></span></label>
+        </div>
+        <div class="format-group sheet-controls">
+          <span class="format-label">Sheet</span>
+          <button id="resize-sheet" class="text-tool">Size</button>
+          <span class="toolbar-divider"></span>
+          <button id="insert-row" class="text-tool">＋ Row</button>
+          <button id="delete-row" class="text-tool">− Row</button>
+          <button id="insert-column" class="text-tool">＋ Column</button>
+          <button id="delete-column" class="text-tool">− Column</button>
+          <label class="width-control">Column width <input id="column-width" type="number" min="48" max="480" value="128" /></label>
+        </div>
+      </section>
+
+      <section class="formula-panel" aria-label="Formula bar">
+        <div class="name-box" id="name-box" aria-label="Selected cell">A1</div>
+        <span class="fx-mark" aria-hidden="true">fx</span>
+        <input id="formula-input" type="text" spellcheck="false" autocomplete="off" aria-label="Cell value or formula" placeholder="Type a value or formula starting with =" />
+        <button id="apply-formula" class="apply-button" title="Apply cell value">Apply</button>
+      </section>
+
+      <section class="sheet-area" aria-label="Spreadsheet">
+        <div id="grid-wrap" class="grid-wrap" tabindex="0" aria-label="Spreadsheet grid. Use arrow keys to move between cells.">
+          <table id="sheet-grid" class="sheet-grid" role="grid" aria-label="MicroCalc worksheet"></table>
+        </div>
+      </section>
+
+      <footer class="statusbar">
+        <div class="status-left"><span class="status-dot"></span><span id="status-message">Ready</span></div>
+        <div class="status-right"><label class="check-control info-toggle"><input id="show-cell-info" type="checkbox" /> Show cell formula</label><span class="status-divider"></span><span id="status-cell">A1</span><span id="status-value"></span></div>
+      </footer>
+    </main>
+
+    <dialog id="help-dialog" class="dialog-card">
+      <form method="dialog" class="dialog-head"><div><span class="eyebrow">MICROCALC 0.9.0</span><h2>Quick help</h2></div><button class="icon-button close-button" aria-label="Close">×</button></form>
+      <div class="dialog-body">
+        <p>Enter a value directly, or start a formula with <code>=</code>. Select a cell and edit its expression in the formula bar.</p>
+        <div class="help-grid">
+          <div><h3>Formula syntax</h3><p><code>+ − * / ^ &amp;</code> · comparisons <code>= != &gt; &lt; &gt;= &lt;=</code> · cell and range references such as <code>A1</code>, <code>$B$3</code>, <code>A1:C4</code></p></div>
+          <div><h3>Functions</h3><p><code>EXP LN SQRT ABS POWER SUM IF AND OR RAND MAX MIN PMT SUMSQ COUNT AVERAGE STDEV PI E</code></p></div>
+          <div><h3>Shortcuts</h3><p><kbd>↑ ↓ ← →</kbd> move · <kbd>Enter</kbd> move down · <kbd>F2</kbd> edit · <kbd>Delete</kbd> clear · <kbd>Ctrl/⌘ C</kbd> copy · <kbd>Ctrl/⌘ V</kbd> paste</p></div>
+          <div><h3>Files</h3><p>Sheets save in this browser. Export a <code>.slk</code> SYLK workbook for spreadsheets, or a JSON backup to move this sheet between browsers.</p></div>
+        </div>
+        <p class="help-note">PMT uses MicroCalc’s argument order: <code>PMT(rate, periods, principal)</code>.</p>
+      </div>
+      <form method="dialog" class="dialog-foot"><button class="primary-button">Got it</button></form>
+    </dialog>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="dist/app.js"></script>
+  </body>
+</html>

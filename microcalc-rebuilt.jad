@@ -1,0 +1,9 @@
+MIDlet-Name: MicroCalc
+MIDlet-Version: 0.7.8
+MIDlet-Vendor: WAP INDUSTRIAL
+MIDlet-Description: a spreadsheet
+MIDlet-1: MicroCalc,,com.wapindustrial.calc.MicroCalc
+MIDlet-Jar-URL: microcalc-rebuilt.jar
+MIDlet-Jar-Size: 47819
+MicroEdition-Configuration: CLDC-1.0
+MicroEdition-Profile: MIDP-1.0
